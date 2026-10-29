@@ -1,0 +1,243 @@
+% ============================================================
+%  smj/smjartwork.sty — Cover, ToC & Article Header Rendering
+% ============================================================
+%
+%  Renders every piece of visual furniture that depends on
+%  article metadata: the cover grid, the table of contents,
+%  and the auto-generated header on the first page of each
+%  article.
+%
+%  Overrides the \smjemitarticleheader no-op from smjcore.
+%
+%  ── PUBLIC MACROS ──────────────────────────────────────────
+%
+%      \smjcoverentries{category}
+%          Renders the cover's two-column grid of article
+%          cards. <category> is "article", "editorial", or
+%          "all".
+%
+%      \smjcontentsentries{category}
+%          Renders the ToC list, one line per article, with
+%          title, author string, and page number.
+%
+%      \contentsentry{title}{author}{label}
+%          Low-level single-entry renderer used by the above.
+%          Call directly for one-off entries outside the grid.
+%
+%      \smjcoverentry{label}
+%          Low-level single-card renderer.
+%
+%  ── AUTO-GENERATED ARTICLE HEADER ──────────────────────────
+%
+%      Called automatically from \smjarticle (in smjcore).
+%      Renders, in order:
+%
+%        • \clearpage and a \phantomsection
+%        • Gold rule (2pt)
+%        • Centered title, author, year
+%        • Crimson rule (0.5pt)
+%        • Abstract (if provided)
+%        • Another crimson rule
+%        • Resets every counter for the new article
+%
+%      Editorial-category articles get a different treatment:
+%      a centered title in front-matter style with no author
+%      line. See the \ifx\smj@hdr@category\smj@hdr@editorial
+%      branch.
+%
+%  ── CUSTOMIZATION ──────────────────────────────────────────
+%
+%      1. To change the article header layout, edit the
+%         \smjemitarticleheader body. Keep the counter resets
+%         intact — removing them will cause numbering to
+%         bleed between articles.
+%
+%      2. To change the cover grid, edit \smjcoverentry. The
+%         outer grid (\smjcoverentries) uses fixed 8.3cm cards
+%         in an 8.5cm tabular; adjusting card width requires
+%         adjusting the tabular too.
+%
+%      3. Do NOT call \smjemitarticleheader manually. It is
+%         invoked by \smjarticle; calling it twice per article
+%         will step the article counter twice and break
+%         hyperref anchors.
+%
+% ============================================================
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{smjartwork}[2026/03/15 SMJ Artwork v1.0]
+
+\RequirePackage{smjcore}
+\RequirePackage{smjcolors}
+\RequirePackage{smjheaders}
+
+% ?? Cover entry: single article ??????????????????????????
+\newcommand{\smjcoverentry}[1]{%
+  \begin{minipage}[t]{8.3cm}\raggedright
+    {\fontsize{14}{17}\selectfont\bfseries\color{smjdark}%
+      \smj@joinauthoryearaffil
+        {\smj@get{#1}{author}}%
+        {\smj@get{#1}{year}}%
+        {}%
+    }\par
+    \vspace{3pt}%
+    {\fontsize{16}{19}\selectfont\itshape\color{smjgray}%
+      \smj@get{#1}{cover-title}}\par
+  \end{minipage}%
+}
+
+% ?? Cover entries: multi-column layout ??????????????????
+\newcommand{\smjcoverentries}[1]{%
+  \smj@buildfilteredlist{#1}%
+  \def\smj@tabbody{}%
+  \smjloopcnt=0
+  \loop\ifnum\smjloopcnt<\smjfilteredcnt
+    \global\advance\smjloopcnt by 1
+    \expandafter\let\expandafter\smj@cur\csname smj@filtered@\the\smjloopcnt\endcsname
+    \ifnum\smjloopcnt=\smjfilteredcnt
+      \ifodd\smjloopcnt
+        \xappto\smj@tabbody{\noexpand\multicolumn{2}{c}{\noexpand\smjcoverentry{\smj@cur}}\noexpand\\[0.5cm]}%
+      \else
+        \xappto\smj@tabbody{\noexpand\smjcoverentry{\smj@cur}\noexpand\\[0.5cm]}%
+      \fi
+    \else
+      \ifodd\smjloopcnt
+        \xappto\smj@tabbody{\noexpand\smjcoverentry{\smj@cur}\noexpand&}%
+      \else
+        \xappto\smj@tabbody{\noexpand\smjcoverentry{\smj@cur}\noexpand\\[0.5cm]}%
+      \fi
+    \fi
+  \repeat
+  \begin{tabular}{@{}p{8.5cm}p{8.5cm}@{}}%
+    \smj@tabbody
+  \end{tabular}%
+}
+
+% Compact cover grid for layouts that reserve less vertical space than the
+% standard cover.  It deliberately uses the same metadata/filtering path as
+% \smjcoverentries, so both cover designs always show the same articles.
+\newcommand{\smjcompactcoverentries}[1]{%
+  \smj@buildfilteredlist{#1}%
+  \def\smj@tabbody{}%
+  \smjloopcnt=0
+  \loop\ifnum\smjloopcnt<\smjfilteredcnt
+    \global\advance\smjloopcnt by 1
+    \expandafter\let\expandafter\smj@cur\csname smj@filtered@\the\smjloopcnt\endcsname
+    \ifnum\smjloopcnt=\smjfilteredcnt
+      \ifodd\smjloopcnt
+        \xappto\smj@tabbody{\noexpand\smjcompactcoverentry{\smj@cur}\noexpand\\[0.25cm]}%
+      \else
+        \xappto\smj@tabbody{\noexpand\smjcompactcoverentry{\smj@cur}\noexpand\\[0.25cm]}%
+      \fi
+    \else
+      \ifodd\smjloopcnt
+        \xappto\smj@tabbody{\noexpand\smjcompactcoverentry{\smj@cur}\noexpand&}%
+      \else
+        \xappto\smj@tabbody{\noexpand\smjcompactcoverentry{\smj@cur}\noexpand\\[0.25cm]}%
+      \fi
+    \fi
+  \repeat
+  \begin{tabular}{@{}p{7.9cm}p{7.9cm}@{}}\smj@tabbody\end{tabular}%
+}
+
+\newcommand{\smjcompactcoverentry}[1]{%
+  \begin{minipage}[t]{7.8cm}\raggedright
+    {\fontsize{15}{18}\selectfont\bfseries\color{smjdark}%
+      \smj@joinauthoryearaffil{\smj@get{#1}{author}}{\smj@get{#1}{year}}{}}\par
+    {\fontsize{17}{20.5}\selectfont\itshape\color{smjgray}%
+      \smj@get{#1}{cover-title}}\par
+  \end{minipage}%
+}
+
+% ?? ToC entry (single) ??????????????????????????????????
+\newcommand{\contentsentry}[3]{%
+  \noindent
+  \begin{minipage}{\textwidth}
+    {\large\bfseries\color{smjcrimson}#1}\hfill{\normalsize\pageref{#3}}\\[0.12cm]
+    {\normalsize\itshape\color{smjgray}#2}
+  \end{minipage}
+  \vspace{0.7cm}\par
+}
+
+% ?? ToC entries (filtered) ??????????????????????????????
+\newcommand{\smjcontentsentries}[1]{%
+  \smj@buildfilteredlist{#1}%
+  \smjloopcnt=0
+  \loop\ifnum\smjloopcnt<\smjfilteredcnt
+    \global\advance\smjloopcnt by 1
+    \expandafter\let\expandafter\smj@cur\csname smj@filtered@\the\smjloopcnt\endcsname
+    \contentsentry
+      {\smj@get{\smj@cur}{toc-title}}%
+      {\smj@joinauthoryearaffil
+         {\smj@get{\smj@cur}{author}}%
+         {\smj@get{\smj@cur}{year}}%
+         {\smj@get{\smj@cur}{affil}}}%
+      {\smj@cur}%
+  \repeat
+}
+
+% ?? Article header emission ?????????????????????????????
+\renewcommand{\smjemitarticleheader}[1]{%
+  \clearpage
+  \phantomsection\label{#1}%
+  \stepcounter{articlectr}%
+  \setarticletitle{\smj@get{#1}{cover-title}}%
+  \setcounter{section}{0}\setcounter{equation}{0}%
+  \setcounter{figure}{0}\setcounter{table}{0}%
+  \setcounter{footnote}{0}%
+  \setcounter{thrmctr}{0}\setcounter{lemmactr}{0}%
+  \setcounter{propctr}{0}\setcounter{corctr}{0}\setcounter{defnctr}{0}%
+  \setcounter{exctr}{0}\setcounter{remctr}{0}%
+  \setcounter{notectr}{0}%
+  \setcounter{alphctr}{0}%
+  \renewcommand{\thesection}{\arabic{section}}%
+  \renewcommand{\thesubsection}{\thesection.\arabic{subsection}}%
+  \renewcommand{\thesubsubsection}{\thesubsection.\arabic{subsubsection}}%
+  \renewcommand{\thefigure}{\arabic{figure}}%
+  \renewcommand{\thetable}{\arabic{table}}%
+  \renewcommand{\theequation}{\arabic{equation}}%
+  \renewcommand{\theHsection}{art\thearticlectr.\thesection}%
+  \renewcommand{\theHsubsection}{art\thearticlectr.\thesubsection}%
+  \renewcommand{\theHsubsubsection}{art\thearticlectr.\thesubsubsection}%
+  \renewcommand{\theHequation}{art\thearticlectr.\theequation}%
+  \renewcommand{\theHfigure}{art\thearticlectr.\thefigure}%
+  \renewcommand{\theHtable}{art\thearticlectr.\thetable}%
+  \edef\smj@hdr@noheader{\smj@get{#1}{no-header}}%
+  \edef\smj@hdr@category{\smj@get{#1}{category}}%
+  \def\smj@hdr@true{true}%
+  \def\smj@hdr@editorial{editorial}%
+  \ifx\smj@hdr@noheader\smj@hdr@true
+  \else
+    \ifx\smj@hdr@category\smj@hdr@editorial
+      \thispagestyle{editorial}%
+      \vspace*{0.5cm}%
+      \begin{center}
+        {\LARGE\bfseries\color{smjcrimson}\smj@get{#1}{title}}
+      \end{center}
+      \vspace{0.3cm}%
+      \noindent\textcolor{smjgold}{\rule{\textwidth}{1.2pt}}%
+      \vspace{0.3cm}%
+    \else
+      \thispagestyle{articlestart}%
+      \noindent\textcolor{smjgold}{\rule{\textwidth}{2pt}}%
+      \vspace{0.9cm}%
+      \begin{center}
+        {\LARGE\bfseries\color{smjcrimson}\smj@get{#1}{title}}\\[0.55cm]
+        {\large \smj@get{#1}{author}}\\[0.2cm]
+        {\normalsize\color{smjgray}\itshape \smj@get{#1}{year}}
+      \end{center}
+      \vspace{0.45cm}%
+      \noindent\textcolor{smjcrimson}{\rule{\textwidth}{0.5pt}}%
+      \vspace{0.25cm}%
+      \ifcsname smj@data@#1@abstract\endcsname
+        \begin{center}\begin{minipage}{0.88\textwidth}
+          {\small\textbf{\textcolor{smjcrimson}{Abstract.}}\ \smj@get{#1}{abstract}}
+        \end{minipage}\end{center}
+        \vspace{0.25cm}%
+        \noindent\textcolor{smjcrimson}{\rule{\textwidth}{0.5pt}}%
+      \fi
+      \vspace{0.4cm}\normalcolor
+    \fi
+  \fi
+}
+
+\endinput

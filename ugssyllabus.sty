@@ -1,0 +1,66 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{ugssyllabus}[2026/10/28 v1.3 UgS Syllabus Style]
+
+% Inherit smj styling (fonts, colours, layout, theorems, hyperref, ...)
+\RequirePackage{smjarticle}
+
+% Extra packages the syllabus content uses
+\RequirePackage{tabularx}
+\RequirePackage{booktabs}
+\RequirePackage{graphicx}
+\RequirePackage{multicol}
+\RequirePackage{pgfkeys}
+\RequirePackage{titlesec}
+\RequirePackage{tocloft}
+
+% --- Run-in sections and subsections, no numbers (original UgS look) ---
+\titleformat{\section}[runin]
+  {\normalfont\Large\bfseries}
+  {}
+  {0em}
+  {}
+
+\titleformat{\subsection}[runin]
+  {\normalfont\large\bfseries}
+  {}
+  {0em}
+  {}
+
+% --- Suppress section/subsection numbers in the ToC ---
+\renewcommand{\cftsecnumwidth}{0pt}
+\renewcommand{\cftsubsecnumwidth}{0pt}
+\renewcommand{\numberline}[1]{}
+
+% --- Fallbacks in case smjarticle does not define these ---
+\providecolor{smjcrimson}{HTML}{C41E3A}
+\providecommand{\UgS}{UgS}
+
+% --- Example theorem environment (if smjarticle did not provide one) ---
+\makeatletter
+\@ifundefined{example}{%
+  \theoremstyle{definition}%
+  \newtheorem{example}{Example}%
+}{}
+\makeatother
+
+% --- Syllabus metadata command ---
+\pgfkeys{
+  /smjsyllabus/title/.initial={},
+  /smjsyllabus/author/.initial={},
+  /smjsyllabus/date/.initial={},
+}
+
+\newcommand{\smjsyllabus}[1]{%
+  \pgfqkeys{/smjsyllabus}{#1}%
+  \title{\pgfkeysvalueof{/smjsyllabus/title}}%
+  \author{\pgfkeysvalueof{/smjsyllabus/author}}%
+  \date{\pgfkeysvalueof{/smjsyllabus/date}}%
+  \maketitle
+}
+
+% --- Abstract wrapper (smjabstract auto-emits ToC and page break) ---
+\newenvironment{smjsyllabusabstract}
+  {\begin{smjabstract}}
+  {\end{smjabstract}}
+
+\endinput

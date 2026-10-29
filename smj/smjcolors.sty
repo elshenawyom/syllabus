@@ -1,0 +1,79 @@
+% ============================================================
+%  smj/smjcolors.sty — Color Palette & Color-Dependent Macros
+% ============================================================
+%
+%  Defines the SMJ brand palette and the handful of macros
+%  whose output depends on those colors. Every other module
+%  that touches color depends on this file.
+%
+%  ── PALETTE ────────────────────────────────────────────────
+%
+%      smjcrimson        primary brand color (deep red)
+%      smjgold           accent color (used for rules, highlights)
+%      smjlightcrimson   soft background tint
+%      smjdark           body text (near-black)
+%      smjgray           metadata, running header
+%      smjlightgray      table fills
+%      smjred            definition theorem frames
+%      smjthrmblue       theorem/lemma/proposition frames
+%      smjlavender       reserved
+%
+%  ── MACROS DEFINED HERE ────────────────────────────────────
+%
+%      \SMJ       prints "SMJ" in crimson bold
+%      \UgS       prints "UgS" in gold bold
+%      \MSCU      prints "MSCU" in gold bold
+%
+%      All three end with \xspace so they do not eat the
+%      following space:  "the \SMJ is" works as expected.
+%
+%      \smjgoldline{<width>}
+%          Emits a full-width horizontal gold rule with 0.3cm
+%          of vertical space above and below. Used to separate
+%          front-matter sections.
+%
+%          Example:  \smjgoldline{1.2pt}
+%
+%  ── CUSTOMIZATION ──────────────────────────────────────────
+%
+%      1. To retheme the journal, edit the \definecolor lines
+%         only. Every dependent module picks up the new colors
+%         automatically on rebuild.
+%
+%      2. To add a new semantic color, add a \definecolor line
+%         here and refer to it as \color{yourname} elsewhere.
+%
+%      3. Do NOT rename the existing colors. smjheaders,
+%         smjsections, smjtheorems, and smjartwork all rely on
+%         the exact names above.
+%
+% ============================================================
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{smjcolors}[2026/03/15 SMJ Colors v1.0]
+
+\RequirePackage[table,xcdraw]{xcolor}
+\RequirePackage{xspace}
+
+\definecolor{smjcrimson}{RGB}{155, 20, 30}
+\definecolor{smjgold}{RGB}{186, 145, 40}
+\definecolor{smjlightcrimson}{RGB}{255, 240, 240}
+\definecolor{smjdark}{RGB}{35, 35, 35}
+\definecolor{smjgray}{RGB}{128, 128, 128}
+\definecolor{smjlightgray}{RGB}{230, 230, 230}
+\definecolor{smjred}{RGB}{160, 30, 30}
+\definecolor{smjthrmblue}{RGB}{100, 10, 20}
+\definecolor{smjlavender}{RGB}{120, 120, 170}
+
+% Acronyms (color-dependent)
+\newcommand{\SMJ}{{\color{smjcrimson}\textbf{SMJ}}\xspace}
+\newcommand{\UgS}{{\color{smjgold}\textbf{UgS}}\xspace}
+\newcommand{\MSCU}{{\color{smjgold}\textbf{MSCU}}\xspace}
+
+% Gold rule helper
+\newcommand{\smjgoldline}[1]{%
+  \vspace{0.3cm}%
+  \noindent\textcolor{smjgold}{\rule{\textwidth}{#1}}%
+  \vspace{0.3cm}%
+}
+
+\endinput

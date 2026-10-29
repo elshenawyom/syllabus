@@ -1,0 +1,351 @@
+% ============================================================
+%  smjarticle.sty — Article Style (Proposal / Standalone Paper)
+% ============================================================
+%
+%  Companion to smj.sty. Loads the same foundation (fonts,
+%  colors, typography, layout, theorems) but strips the
+%  journal chrome: no cover, no ToC machinery, no per-article
+%  bibliography (bibunits), no journal running header.
+%  Replaces them with a plain \maketitle, a one-line running
+%  header, a bundled smjabstract environment (abstract + ToC
+%  + pagebreak), and the standard LaTeX thebibliography (no
+%  biber, no .bib file).
+%
+%  ── STRUCTURE ──────────────────────────────────────────────
+%
+%      The loader runs in this order:
+%
+%        1. smjfonts     — encoding and font families
+%        2. smjcolors    — color palette and acronym macros
+%        3. Math/graphics infrastructure (amsmath, tikz, …)
+%        4. smjtypo      — global spacing and stretch
+%        5. smjlayout    — page geometry (A4, margins)
+%        6. smjcore      — counters (shared with journal)
+%        7. smjsections  — section heading styles
+%        8. smjtheorems  — theorem-like environments
+%        9. fancyhdr     — running header (inline, see §7)
+%       10. \maketitle   — plain title block (see §8)
+%       11. smjabstract  — styled abstract + ToC + pagebreak
+%                          (see §9)
+%       12. hyperref + cleveref (see §10)
+%       13. proposal     — \smjproposal + content envs (see §11)
+%
+%  ── DIFFERENCES FROM smj.sty ──────────────────────────────
+%
+%      LOADED in smj.sty, SKIPPED here:
+%
+%          smjheaders   journal name in header (hardcoded),
+%                       section marks suppressed. Article needs
+%                       the seminar name and the proposal title,
+%                       so the header is re-implemented inline
+%                       in §7 instead.
+%
+%          smjartwork   cover grid, ToC rendering, per-article
+%                       auto-header. Article is a single
+%                       document, so these are not needed.
+%
+%          smjbib       per-article bibunits.
+%          biblatex     document-level bibliography.
+%                       Article uses the standard LaTeX
+%                       thebibliography (no biber, no .bib),
+%                       wrapped by the smjreferences env in §11.
+%
+%      ADDED here (not in smj.sty):
+%
+%          §7  inline fancyhdr block (seminar name + \smjtitle)
+%          §8  plain \maketitle (no cover, no spine)
+%          §9  smjabstract environment (abstract + ToC + pagebreak)
+%          §11 \smjproposal metadata + smjmotivation/objectives/
+%              timeline/references environments
+%
+%  ── USAGE ──────────────────────────────────────────────────
+%
+%      In main.tex:
+%
+%          \documentclass[a4paper,11pt]{article}
+%          \usepackage{smjarticle}
+%          \begin{document}
+%          \input{proposals/<dir>/<name>.tex}
+%          \end{document}
+%
+%      In proposals/<dir>/<name>.tex:
+%
+%          \smjproposal{
+%            title  = {My Proposal},
+%            mentor = {Name \\ Affiliation},
+%          }
+%
+%          \begin{smjabstract}
+%            Short summary with \emph{markup} and multiple
+%            paragraphs.
+%
+%            A second paragraph works too.
+%          \end{smjabstract}
+%
+%          \begin{smjmotivation}
+%            Long prose, lists, math, \input{...} — anything.
+%          \end{smjmotivation}
+%
+%          \begin{smjobjectives}
+%            Three core objectives, ascending difficulty.
+%          \end{smjobjectives}
+%
+%          \begin{smjtimeline}
+%            Talk: \today. Abstract/draft: T$-$6.
+%          \end{smjtimeline}
+%
+%          \begin{smjreferences}
+%            \bibitem{key1} Author, \emph{Title}. Year.
+%            \bibitem{key2} Author, \emph{Title}. Year.
+%          \end{smjreferences}
+%
+%      \smjproposal renders the title page immediately, so it
+%      must be called inside \begin{document}. The smjabstract
+%      environment must follow \smjproposal (it supplies the
+%      front matter after the title page and emits the ToC).
+%
+%  ── CUSTOMIZATION ──────────────────────────────────────────
+%
+%      1. Header text: §7. \fancyhead[L] is the fixed seminar
+%         name; \fancyhead[R] prints \smjtitle (the proposal
+%         title). Override either line directly.
+%
+%      2. Title block: §8. \maketitle renders a gold rule at
+%         top, then title (crimson), author, date, and an
+%         unnumbered left-aligned colophon footnote with the
+%         standard footnote rule above it. Page counter is
+%         reset to 0 so the body starts at page 1.
+%
+%      3. Abstract: §9. smjabstract renders two crimson rules
+%         bracketing a centred 88%-width minipage with a bold
+%         "Abstract." label, then runs \tableofcontents and
+%         \newpage on the environment's \end. This bundles
+%         the standard front-matter pattern (abstract → ToC
+%         → page break) into a single env. To suppress the
+%         ToC, redefine \smjabstract locally.
+%
+%      4. Proposal commands: §11. Slots:
+%
+%             title          → \smjtitle      (getter)
+%             mentor         → \smjmentor     (getter)
+%
+%         Content environments (each emits its \section):
+%
+%             smjmotivation  → \section{Motivation}
+%             smjobjectives  → \section{Research Objectives}
+%             smjtimeline    → \section{Timeline}
+%             smjreferences  → \section{References} +
+%                              \begin{thebibliography}
+%
+%         smjreferences takes one optional argument: the width
+%         of the widest bibliography label (default 9). Use 99
+%         for 10–99 entries. Body contains \bibitem entries;
+%         do NOT write \begin{thebibliography} manually.
+%
+%      5. Do NOT add smjheaders, smjartwork, smjbib, or
+%         biblatex to the \RequirePackage list. They are
+%         journal-configured and would conflict with the
+%         inline versions in §7–§9 and the thebibliography
+%         wrapper in §11.
+%
+% ============================================================
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{smjarticle}[2026/10/28 SMJ Article Style v1.0]
+
+\makeatletter
+\def\input@path{{smj/}}
+\makeatother
+
+% ── 1. Fonts + palette (shared with journal) ────────────────
+\RequirePackage{smjfonts}
+\RequirePackage{smjcolors}
+
+% ── 2. Math / graphics / tables / misc ─────────────────────
+\RequirePackage{amsmath, amssymb, amsthm}
+\RequirePackage{physics}
+\RequirePackage{cancel}
+\RequirePackage{graphicx}
+\RequirePackage{tikz}
+\usetikzlibrary{calc, arrows.meta, decorations.markings,
+                shadings, positioning, 3d}
+\RequirePackage[most]{tcolorbox}
+\RequirePackage{booktabs}
+\RequirePackage{tabularx}
+\RequirePackage{colortbl}
+\RequirePackage{float}
+\RequirePackage{caption}
+\RequirePackage{subcaption}
+\RequirePackage{multicol}
+\RequirePackage{algorithm}
+\RequirePackage{algpseudocode}
+\RequirePackage{comment}
+\RequirePackage{footnote}
+\RequirePackage{enumitem}
+\RequirePackage{xparse}
+
+% ── 3. Typography + layout ─────────────────────────────────
+\RequirePackage{smjtypo}
+\RequirePackage{smjlayout}
+\geometry{headheight=22pt}
+
+% ── 4. Counters ────────────────────────────────────────────
+\RequirePackage{smjcore}
+
+% ── 5. Section headings ────────────────────────────────────
+\RequirePackage{smjsections}
+
+% ── 6. Theorem environments ────────────────────────────────
+\RequirePackage{smjtheorems}
+
+% ── 7. Running header / footer ─────────────────────────────
+%      Inline replacement for smjheaders. Two differences:
+%        • \fancyhead[L] is the fixed seminar name
+%        • \fancyhead[R] prints \smjtitle (the title),
+%          not \rightmark
+\RequirePackage{fancyhdr}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{smjgray}\itshape The Mathematical Undergraduate Seminar}
+\fancyhead[R]{\small\color{smjgray}\itshape\smjtitle}
+\fancyfoot[C]{\small\color{smjgray}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{%
+  \hbox to\headwidth{\color{smjgold}\leaders\hrule height\headrulewidth\hfill}}
+\renewcommand{\footrulewidth}{0pt}
+
+% ── 8. Plain \maketitle ────────────────────────────────────
+%      Gold rule at top, crimson title, author, date, and an
+%      unnumbered left-aligned colophon footnote at the
+%      bottom of the page (standard footnote rule above it).
+%      Resets page counter so body starts at page 1.
+\makeatletter
+\renewcommand{\maketitle}{%
+  \setcounter{page}{0}%
+  \thispagestyle{empty}%
+  \noindent\textcolor{smjgold}{\rule{\textwidth}{2pt}}%
+  \vspace{0.8cm}%
+  \begingroup
+    \renewcommand{\thefootnote}{\fnsymbol{footnote}}%
+    \begin{center}
+      {\LARGE\bfseries\color{smjcrimson}\@title\footnotemark[2]\par}%
+      \vspace{0.5cm}%
+      {\large\@author\par}%
+      \vspace{0.2cm}%
+      {\normalsize\color{smjgray}\itshape\@date\par}%
+    \end{center}%
+    \vspace{0.3cm}%
+    \footnotetext[2]{%
+      The Mathematical Undergraduate Seminar (\UgS)
+      is an initiative organized by the Mathematical Society @ Constructor University (\MSCU). More
+      may be found at \url{https://constructor-math.github.io/Subpages/ugs}.%
+    }%
+  \endgroup
+}
+\makeatother
+
+% ── 9. Abstract environment (bundles abstract + ToC + pagebreak) ─
+%      Body flows inside the centred 88%-width minipage.
+%      The \end emits \tableofcontents and \newpage, so the
+%      env encapsulates the full front-matter pattern.
+\NewDocumentEnvironment{smjabstract}{}
+  {%
+    \par\addvspace{0.4cm}%
+    \noindent\textcolor{smjcrimson}{\rule{\textwidth}{0.5pt}}\par
+    \vspace{0.25cm}%
+    \begin{center}\begin{minipage}{0.88\textwidth}
+      \small\textbf{\textcolor{smjcrimson}{Abstract.}}\ \ignorespaces
+  }
+  {%
+    \end{minipage}\end{center}%
+    \vspace{0.25cm}%
+    \noindent\textcolor{smjcrimson}{\rule{\textwidth}{0.5pt}}\par
+    \addvspace{0.4cm}%
+    \tableofcontents
+    \newpage
+  }
+
+% ── 10. Hyperlinks (last) ──────────────────────────────────
+\RequirePackage{hyperref}
+\RequirePackage{cleveref}
+\hypersetup{
+  colorlinks = true,
+  linkcolor  = smjcrimson,
+  citecolor  = smjcrimson!70!black,
+  urlcolor   = smjcrimson!80!black,
+}
+
+% ── 11. Proposal metadata + content environments ──────────
+%      \smjproposal{key=val,...} sets metadata and renders
+%      the title page. Keys: title, mentor. Must be called
+%      inside \begin{document}.
+%
+%      Getters: \smjtitle, \smjmentor.
+%
+%      Content environments emit their \section heading:
+%          smjmotivation  → \section{Motivation}
+%          smjobjectives  → \section{Research Objectives}
+%          smjtimeline    → \section{Timeline}
+%          smjreferences  → \section{References} + thebibliography
+%
+%      All content environments emit the heading
+%      unconditionally; omit the env if you do not want the
+%      section.
+\RequirePackage{expl3}
+
+\ExplSyntaxOn
+
+\tl_new:N \g__smj_title_tl
+\tl_new:N \g__smj_mentor_tl
+
+\keys_define:nn { smj / proposal }
+  {
+    title  .tl_gset:N = \g__smj_title_tl ,
+    mentor .tl_gset:N = \g__smj_mentor_tl ,
+  }
+
+\NewDocumentCommand{\smjproposal}{m}
+  {
+    \keys_set:nn { smj / proposal } {#1}
+    \title  { \g__smj_title_tl }
+    \author { \g__smj_mentor_tl }
+    \date   { \today }
+    \maketitle
+  }
+
+\NewDocumentCommand{\smjtitle}  { } { \tl_use:N \g__smj_title_tl }
+\NewDocumentCommand{\smjmentor} { } { \tl_use:N \g__smj_mentor_tl }
+
+\ExplSyntaxOff
+
+% Environments defined outside expl3 so the spaces in
+% \section{Research Objectives} survive tokenization.
+\NewDocumentEnvironment{smjmotivation}{}
+  { \section{Motivation} }
+  { }
+
+\NewDocumentEnvironment{smjobjectives}{}
+  { \section{Research Objectives} }
+  { }
+
+\NewDocumentEnvironment{smjtimeline}{}
+  { \section{Timeline} }
+  { }
+
+% smjreferences wraps thebibliography. The kernel env emits
+% its own \section*{\refname} which would duplicate our
+% numbered \section{References}; the local \renewcommand
+% below absorbs that call so only our heading appears.
+% The \bibitem entries still register with \cite through
+% \bibcite written into the .aux file.
+\NewDocumentEnvironment{smjreferences}{ O{9} }
+  { \section{References}
+    \begingroup
+      \renewcommand{\section}[2]{}%
+      \begin{thebibliography}{#1}
+  }
+  { \end{thebibliography}
+    \endgroup
+  }
+
+\endinput

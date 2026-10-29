@@ -1,0 +1,163 @@
+% ============================================================
+%  smj/smjtheorems.sty — Theorem-Like Environments
+% ============================================================
+%
+%  Defines every theorem-like environment used by the journal.
+%  Two factories produce them:
+%
+%      \smj@envdef    — boxed, framed, with title bar
+%      \smj@plaindef  — unboxed, bold inline heading
+%
+%  ── BOXED ENVIRONMENTS ─────────────────────────────────────
+%
+%      smjtheorem       Theorem      (shares thrmctr)
+%      smjlemma         Lemma        (shares thrmctr)
+%      smjproposition   Proposition  (shares thrmctr)
+%      smjcorollary     Corollary    (shares thrmctr)
+%      smjdefinition    Definition   (own counter)
+%      smjnamedtheorem  Theorem      (A, B, C numbering)
+%
+%      All boxed environments share one call signature:
+%
+%          \begin{smjtheorem}[Optional Title]{optional:label}
+%              ... body ...
+%          \end{smjtheorem}
+%
+%      All four call shapes work:
+%
+%          \begin{smjtheorem}          no title, no label
+%          \begin{smjtheorem}[T]       title only
+%          \begin{smjtheorem}{l}       label only
+%          \begin{smjtheorem}[T]{l}    both
+%
+%  ── UNBOXED ENVIRONMENTS ───────────────────────────────────
+%
+%      smjremark        Remark     (own counter)
+%      smjnote          Note       (own counter)
+%      smjfact          Fact       (shares thrmctr)
+%      smjexample       Example    (own counter)
+%
+%      Same call signature as the boxed set. No frame; the
+%      heading is rendered as a bold inline "Remark 1." with
+%      the body following on the same line.
+%
+%  ── CROSS-REFERENCING ──────────────────────────────────────
+%
+%      \cref{label}  /  \Cref{label}
+%          Works out of the box. The environment type
+%          (Theorem / Lemma / Proposition / ...) is resolved
+%          from the counter used to define it.
+%
+%  ── CUSTOMIZATION ──────────────────────────────────────────
+%
+%      1. To add a new environment, mimic the existing
+%         \smj@envdef calls at the bottom of the file:
+%
+%             \smj@envdef{smjyourname}{thrmctr}
+%                         {smjcrimson}{smjcrimson}{Your Label}
+%
+%         The 5 args are:
+%             #1 environment name
+%             #2 counter (must already exist in smjcore)
+%             #3 frame color
+%             #4 title color
+%             #5 displayed label ("Theorem", "Lemma", …)
+%
+%      2. To use a fresh counter, declare it in smjcore first.
+%
+%      3. Do NOT remove \AtBeginEnvironment{proof} hooks.
+%         They tighten spacing around every proof; without
+%         them, proofs float too far from their theorems.
+%
+% ============================================================
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{smjtheorems}[2026/03/15 SMJ Theorems v1.0]
+
+\RequirePackage{tcolorbox}
+\RequirePackage{etoolbox}
+\RequirePackage{xparse}
+\RequirePackage{smjcolors}
+\RequirePackage{smjcore}
+
+% cleveref names ? deferred until \begin{document} when cleveref is loaded
+\AtBeginDocument{%
+  \crefname{thrmctr}{Theorem}{Theorems}%
+  \Crefname{thrmctr}{Theorem}{Theorems}%
+  \crefname{lemmactr}{Lemma}{Lemmas}%
+  \Crefname{lemmactr}{Lemma}{Lemmas}%
+  \crefname{propctr}{Proposition}{Propositions}%
+  \Crefname{propctr}{Proposition}{Propositions}%
+  \crefname{corctr}{Corollary}{Corollaries}%
+  \Crefname{corctr}{Corollary}{Corollaries}%
+  \crefname{defnctr}{Definition}{Definitions}%
+  \Crefname{defnctr}{Definition}{Definitions}%
+  \crefname{alphctr}{Theorem}{Theorems}%
+  \Crefname{alphctr}{Theorem}{Theorems}%
+}
+
+% Boxed theorem-like factory
+\newcommand{\smj@envdef}[5]{%
+  \NewDocumentEnvironment{#1}{o g}{%
+    \def\smj@envtitle{}%
+    \IfNoValueF{##1}{\def\smj@envtitle{##1}}%
+    \ifboolexpr{
+      test {\ifstrequal{#2}{lemmactr}}
+      or test {\ifstrequal{#2}{propctr}}
+      or test {\ifstrequal{#2}{corctr}}
+    }{\refstepcounter{thrmctr}}{}%
+    \refstepcounter{#2}%
+    \xdef\smj@envnum{\csname the#2\endcsname}%
+    \xdef\@currentlabel{\smj@envnum}%
+    \IfNoValueF{##2}{\label{##2}}%
+    \begin{tcolorbox}[
+      colback=white, colframe=#3,
+      colbacktitle=white, coltitle=#4,
+      fonttitle=\bfseries,
+      title={#5~\smj@envnum
+             \ifx\smj@envtitle\empty\else: \smj@envtitle\fi},
+      boxrule=0.8pt, sharp corners, enhanced, breakable,
+      width=\textwidth,
+      before skip=0.5\baselineskip,
+      after skip=0.5\baselineskip,
+    ]%
+  }{%
+    \end{tcolorbox}%
+  }%
+}
+
+\smj@envdef{smjtheorem}    {thrmctr}{smjthrmblue}{smjthrmblue}{Theorem}
+\smj@envdef{smjlemma}      {lemmactr}{smjthrmblue}{smjthrmblue}{Lemma}
+\smj@envdef{smjproposition}{propctr}{smjthrmblue}{smjthrmblue}{Proposition}
+\smj@envdef{smjcorollary}  {corctr}{smjthrmblue}{smjthrmblue}{Corollary}
+\smj@envdef{smjdefinition} {defnctr}{smjred}     {smjred}     {Definition}
+\smj@envdef{smjnamedtheorem}{alphctr}{smjcrimson}{smjcrimson}{Theorem}
+
+% Unboxed remark-like factory
+\newcommand{\smj@plaindef}[4]{%
+  \NewDocumentEnvironment{#1}{o g}{%
+    \par\addvspace{0.6\baselineskip}%
+    \noindent
+    \refstepcounter{#2}\xdef\@currentlabel{\csname the#2\endcsname}%
+    \textbf{\color{#4}#3~\csname the#2\endcsname}%
+    \def\smj@tmpname{}%
+    \IfNoValueF{##1}{\def\smj@tmpname{##1}}%
+    \ifx\smj@tmpname\empty\else
+      \ \textbf{\color{#4}(\smj@tmpname)}%
+    \fi
+    \textbf{\color{#4}.}%
+    \IfNoValueF{##2}{\label{##2}}%
+    \hspace{0.5em}\ignorespaces
+  }{%
+    \par\addvspace{0.6\baselineskip}%
+  }%
+}
+
+\smj@plaindef{smjremark} {remctr}{Remark} {smjcrimson!80!black}
+\smj@plaindef{smjnote}   {notectr}{Note}  {smjcrimson!80!black}
+\smj@plaindef{smjfact}   {thrmctr}{Fact}  {smjthrmblue}
+\smj@plaindef{smjexample}{exctr} {Example}{smjred}
+
+\AtBeginEnvironment{proof}{\vspace*{-0.7\baselineskip}}
+\AtEndEnvironment{proof}{\vspace*{-0.7\baselineskip}}
+
+\endinput

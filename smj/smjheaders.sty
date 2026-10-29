@@ -1,0 +1,86 @@
+% ============================================================
+%  smj/smjheaders.sty — Headers, Footers & Page Styles
+% ============================================================
+%
+%  Defines the running header/footer for the whole document,
+%  plus two named page styles used at article boundaries.
+%
+%  ── PAGE STYLES ────────────────────────────────────────────
+%
+%      fancy (default)
+%          Running header: journal name (left) and current
+%          article title (right). Gold rule underneath.
+%          Page number centered at bottom.
+%
+%      articlestart
+%          Used on the first page of each article. No header.
+%          Page number centered at bottom.
+%
+%      frontmatter
+%          Used on front-matter pages. No header, no footer.
+%
+%  ── PUBLIC MACRO ───────────────────────────────────────────
+%
+%      \setarticletitle{<title>}
+%          Writes <title> into \rightmark so the running
+%          header updates. smjartwork calls this once per
+%          article, from \smjemitarticleheader.
+%
+%  ── CUSTOMIZATION ──────────────────────────────────────────
+%
+%      1. Header text. Edit the \fancyhead[L] line. The gold
+%         rule under the header is the \renewcommand{\headrule}
+%         block; change its color or width there.
+%
+%      2. Section marks. \sectionmark, \subsectionmark, and
+%         \subsubsectionmark are deliberately suppressed so
+%         that only \setarticletitle writes to \rightmark.
+%         Do NOT un-suppress them unless you also remove the
+%         \setarticletitle call in smjartwork.
+%
+%      3. Do NOT redefine \pagestyle{fancy} elsewhere. It is
+%         set here and nowhere else.
+%
+% ============================================================
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{smjheaders}[2026/03/15 SMJ Headers v1.0]
+
+\RequirePackage{fancyhdr}
+\RequirePackage{smjcolors}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{smjgray}\itshape The Student Mathematical Journal}
+\fancyhead[R]{\small\color{smjgray}\itshape\rightmark}
+\fancyfoot[C]{\small\color{smjgray}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{%
+  \hbox to\headwidth{\color{smjgold}\leaders\hrule height\headrulewidth\hfill}}
+\renewcommand{\footrulewidth}{0pt}
+
+\renewcommand{\sectionmark}[1]{}
+\renewcommand{\subsectionmark}[1]{}
+\renewcommand{\subsubsectionmark}[1]{}
+\renewcommand{\@mkboth}[2]{}
+
+\fancypagestyle{articlestart}{%
+  \fancyhf{}%
+  \fancyfoot[C]{\small\color{smjgray}\thepage}%
+  \renewcommand{\headrulewidth}{0pt}%
+}
+
+\fancypagestyle{frontmatter}{%
+  \fancyhf{}%
+  \renewcommand{\headrulewidth}{0pt}%
+}
+
+\fancypagestyle{editorial}{%
+  \fancyhf{}%
+  \fancyfoot[C]{\small\color{smjgray}\thepage}%
+  \renewcommand{\headrulewidth}{0pt}%
+  \renewcommand{\footrulewidth}{0pt}%
+}
+
+\newcommand{\setarticletitle}[1]{\markright{#1}}
+
+\endinput

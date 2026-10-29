@@ -1,0 +1,65 @@
+% ============================================================
+%  smj/smjsections.sty — Section Heading Styles
+% ============================================================
+%
+%  Formats \section, \subsection, and \subsubsection headings
+%  with the SMJ typographic identity: crimson, bold, and
+%  tightly spaced. Also defines two inline heading macros
+%  used in front matter.
+%
+%  ── HEADING STYLES ─────────────────────────────────────────
+%
+%      \section         Large,   crimson,     1.2ex above
+%      \subsection      large,   crimson!80,  1.0ex above
+%      \subsubsection   normal,  crimson!60,  0.8ex above
+%
+%      All three suppress trailing color so that following
+%      text returns to body color automatically.
+%
+%  ── PUBLIC MACROS ──────────────────────────────────────────
+%
+%      \smjheading{<text>}
+%          Large bold crimson inline heading. Use in cover
+%          and info pages where a numbered section would be
+%          overkill.
+%
+%      \smjsubheading{<text>}
+%          Same but one size smaller. Use for subsections in
+%          front matter (e.g. "Submission Guidelines").
+%
+%  ── CUSTOMIZATION ──────────────────────────────────────────
+%
+%      1. To change heading colors, edit the \titleformat
+%         blocks. To change spacing, edit \titlespacing.
+%
+%      2. Section numbering is set by smjcore per article
+%         (restarts at 1 each time). Do not touch numbering
+%         here.
+%
+%      3. Do NOT redefine \section, \subsection, or
+%         \subsubsection via \renewcommand. Use \titleformat
+%         — it is the supported interface and preserves
+%         headings in the ToC and PDF bookmarks.
+%
+% ============================================================
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{smjsections}[2026/03/15 SMJ Sections v1.0]
+
+\RequirePackage{titlesec}
+\RequirePackage{smjcolors}
+
+\titleformat{\section}
+  {\Large\bfseries\color{smjcrimson}}{\thesection}{1em}{}[\normalcolor]
+\titleformat{\subsection}
+  {\large\bfseries\color{smjcrimson!80!black}}{\thesubsection}{1em}{}[\normalcolor]
+\titleformat{\subsubsection}
+  {\normalsize\bfseries\color{smjcrimson!60!black}}{\thesubsubsection}{1em}{}[\normalcolor]
+
+\titlespacing*{\section}      {0pt}{1.2ex}{0.8ex}
+\titlespacing*{\subsection}   {0pt}{1.0ex}{0.5ex}
+\titlespacing*{\subsubsection}{0pt}{0.8ex}{0.4ex}
+
+\newcommand{\smjsubheading}[1]{{\large\bfseries\color{smjcrimson}#1}}
+\newcommand{\smjheading}[1]{{\Large\bfseries\color{smjcrimson}#1}}
+
+\endinput

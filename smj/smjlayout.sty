@@ -1,0 +1,47 @@
+% ============================================================
+%  smj/smjlayout.sty — Page Geometry
+% ============================================================
+%
+%  Sets page size and margins for the entire journal. Loads
+%  the geometry package once, with fixed values. Every page
+%  in the journal shares these margins.
+%
+%  ── STRUCTURE ──────────────────────────────────────────────
+%
+%      a4paper, two-sided, headheight=36pt
+%      top = bottom = left = right = 2.5cm
+%
+%  ── CUSTOMIZATION ──────────────────────────────────────────
+%
+%      1. To widen the text block, lower left/right. The cover
+%         and front matter do not use these margins directly
+%         (they draw on the full page via TikZ overlay), but
+%         article bodies and the editorial sections do.
+%
+%      2. headheight must stay ≥ 30pt. The running header
+%         (\small\itshape) fits in 36pt; lowering it triggers
+%         "headheight too small" warnings from fancyhdr.
+%
+%      3. Individual pages that need a different geometry can
+%         use \newgeometry{...} ... \restoregeometry. See
+%         front/f2-info.tex for an example that widens the
+%         info page.
+%
+%      4. Do NOT load geometry anywhere else. Loading it twice
+%         with different options produces silent overrides
+%         depending on package order.
+%
+% ============================================================
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{smjlayout}[2026/03/15 SMJ Layout v1.0]
+
+\RequirePackage[
+  a4paper,
+  top=2.5cm,
+  bottom=2.5cm,
+  left=2.5cm,
+  right=2.5cm,
+  headheight=36pt
+]{geometry}
+
+\endinput

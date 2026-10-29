@@ -1,0 +1,53 @@
+% ============================================================
+%  smj/smjtypo.sty — Typography & Global Spacing
+% ============================================================
+%
+%  Sets the document-wide typographic rhythm: line spacing,
+%  paragraph indentation, paragraph skip, body text color, and
+%  the default spacing around floats.
+%
+%  Depends on smjcolors for \color{smjdark}.
+%
+%  ── STRUCTURE ──────────────────────────────────────────────
+%
+%      • \setstretch{1.15}          — 15% line spacing boost
+%      • \parindent = 0pt           — no first-line indent
+%      • \parskip = 0.45em          — vertical gap between paras
+%      • \color{smjdark} at start   — body text color
+%      • \floatsep / \textfloatsep / \intextsep
+%                                   — spacing around figures/tables
+%
+%  ── CUSTOMIZATION ──────────────────────────────────────────
+%
+%      1. Line spacing. \setstretch{1.15} is a compromise
+%         between standard 1.0 and double-spaced drafts.
+%         Lower for a denser look; raise for readability.
+%
+%      2. Paragraph style. This journal uses "block paragraphs"
+%         (no indent, vertical gap). To switch to traditional
+%         style, set \parindent to a positive length and
+%         \parskip to 0pt.
+%
+%      3. Float spacing. If figures crowd the text, raise
+%         \textfloatsep; if pages have too much whitespace,
+%         lower it.
+%
+%      4. Do NOT add font declarations here — those belong in
+%         smjfonts. Do NOT add page geometry — that lives in
+%         smjlayout.
+%
+% ============================================================
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{smjtypo}[2026/03/15 SMJ Typography v1.0]
+
+\RequirePackage{smjcolors}
+
+\setstretch{1.15}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.45em}
+\AtBeginDocument{\color{smjdark}}
+\setlength{\floatsep}{12pt plus 2pt minus 2pt}
+\setlength{\textfloatsep}{15pt plus 2pt minus 4pt}
+\setlength{\intextsep}{4pt}
+
+\endinput

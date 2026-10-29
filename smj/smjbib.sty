@@ -1,0 +1,102 @@
+% ============================================================
+%  smj/smjbib.sty — Per-Article Bibliography
+% ============================================================
+%
+%  Wraps bibunits so that every article can have its own
+%  reference list, independent of the others. Overrides the
+%  \smjbibstart no-op from smjcore to open a bibunit at the
+%  start of each article.
+%
+%  ── HOW IT WORKS ───────────────────────────────────────────
+%
+%      When \smjarticle runs (in smjcore), it calls
+%      \smjbibstart{<label>}. Here, that macro opens a bibunit
+%      if the article's category is "article". Editorial
+%      pieces skip the bibunit and have no reference list.
+%
+%      At the end of an article, call \smjbibliography with
+%      the path to the article's .bib file:
+%
+%          \smjbibliography{<path/to/refs>}
+%              Prints a "References" heading, runs \putbib on
+%              the given .bib, and closes the bibunit.
+%
+%          \smjbibliography{}
+%              Closes the bibunit without printing a refs
+%              section. Use when an article has no citations.
+%
+%  ── BIBLIOGRAPHY STYLE ─────────────────────────────────────
+%
+%      Default: plain (numeric, alphabetical).
+%      To use another style, override in articles/config.tex:
+%
+%          \renewcommand{\smjbibstyle}{unsrt}
+%
+%      Available: plain, unsrt, alpha, abbrv.
+%      For author-year, add natbib and use *nat variants.
+%
+%  ── CUSTOMIZATION ──────────────────────────────────────────
+%
+%      1. To change the "References" heading style, edit
+%         \articlereferences.
+%
+%      2. To change the bib style, use \smjbibstyle above.
+%
+%      3. Do NOT call \putbib directly. Always go through
+%         \smjbibliography — it manages the open/close state
+%         of the bibunit.
+%
+% ============================================================
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{smjbib}[2026/03/15 SMJ Bibliography v1.0]
+
+\RequirePackage{cite}
+\RequirePackage{bibunits}
+\RequirePackage{import}
+\RequirePackage{smjcolors}
+\RequirePackage{smjcore}
+
+\providecommand{\smjbibstyle}{plain}
+
+\newif\ifsmjbibunitopen
+\smjbibunitopenfalse
+
+% Hook for smjcore's \smjarticle: open bibunit for regular articles
+\renewcommand{\smjbibstart}[1]{%
+  \edef\smj@catcheck{\smj@get{#1}{category}}%
+  \def\smj@cattarget{article}%
+  \ifx\smj@catcheck\smj@cattarget
+    \begin{bibunit}[\smjbibstyle]%
+    \global\smjbibunitopentrue
+  \fi
+}
+
+\makeatletter
+\newcommand{\smjbibfile}[1]{\import@path #1}
+\makeatother
+
+% References heading
+\newcommand{\articlereferences}{%
+  \vspace{0.6cm}%
+  \noindent{\large\bfseries\color{smjcrimson}References}%
+  \vspace{0.3cm}\par
+}
+
+% Usage: \smjbibliography{path/to/refs}  ? print + close
+%        \smjbibliography{}              ? close, no print
+\newcommand{\smjbibliography}[1]{%
+  \ifsmjbibunitopen
+    \if\relax\detokenize{#1}\relax
+    \else
+      \articlereferences
+      \begingroup
+        \renewcommand{\section}[2]{}%
+        \putbib[\smjbibfile{#1}]%
+      \endgroup
+    \fi
+    \end{bibunit}%
+    \global\smjbibunitopenfalse
+  \fi
+}
+
+\endinput

@@ -1,0 +1,210 @@
+% ============================================================
+%  smj/smjcore.sty — Counters & Article Metadata System
+% ============================================================
+%
+%  Two responsibilities:
+%
+%    (1) Owns the counters used by theorem-like environments,
+%        figures, tables, equations, footnotes, and the
+%        per-article counter that scopes hyperref anchors.
+%
+%    (2) Implements the .aux-file metadata system that lets
+%        the cover and table of contents list articles that
+%        appear later in the document.
+%
+%  ── METADATA USAGE ─────────────────────────────────────────
+%
+%      Each article file opens with:
+%
+%          \smjarticle{<label>}{
+%            title       = {Display Title},
+%            cover-title = {Short Title for the Cover},
+%            toc-title   = {Short Title for the ToC},
+%            author      = {Author Name},
+%            year        = {MATH'25},
+%            affil       = {Optional Affiliation},
+%            category    = {article},   % or editorial
+%            abstract    = {Optional Abstract Text},
+%            no-header   = {true},      % suppress auto-header
+%          }
+%
+%      Metadata is written to the .aux file and read back on
+%      the NEXT compile — same mechanism \tableofcontents
+%      uses. First compile: cover empty. Second compile:
+%      populated. latexmk handles this automatically.
+%
+%  ── PUBLIC MACROS ──────────────────────────────────────────
+%
+%      \smjarticle{label}{key=val,...}   see above
+%      \smjauxentry{label}{key}{value}   called by .aux reader
+%      \smjcoverentries{category}        renders cover grid
+%      \smjcontentsentries{category}     renders ToC list
+%
+%  ── HOOKS (used by smjartwork / smjbib) ────────────────────
+%
+%      \smjemitarticleheader{label}   default: no-op
+%      \smjbibstart{label}            default: no-op
+%
+%      Both are \providecommand'd as empty. smjartwork
+%      overrides the first; smjbib overrides the second. This
+%      is how smjcore stays free of any dependency on tcolorbox
+%      or bibunits.
+%
+%  ── CUSTOMIZATION ──────────────────────────────────────────
+%
+%      1. To add a new metadata key, add a \define@key line
+%         and store/write it alongside the others in
+%         \smjarticle.
+%
+%      2. Do NOT rename the counters. smjtheorems, smjartwork,
+%         and the reset logic in \smjemitarticleheader all
+%         reference them by exact name.
+%
+%      3. The \theH... anchor definitions use \def (not
+%         \renewcommand) because hyperref is not loaded yet
+%         when this file runs. Do not "modernize" them.
+%
+% ============================================================
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{smjcore}[2026/03/15 SMJ Core v1.0]
+
+\RequirePackage{etoolbox}
+\RequirePackage{keyval}
+
+% ?? Counters ?????????????????????????????????????????????
+\newcounter{articlectr}
+
+\newcounter{thrmctr}
+\newcounter{lemmactr}
+\newcounter{propctr}
+\newcounter{corctr}
+\newcounter{defnctr}
+\newcounter{exctr}
+\newcounter{remctr}
+\newcounter{notectr}
+\newcounter{alphctr}
+
+\renewcommand{\thelemmactr}{\thethrmctr}
+\renewcommand{\thepropctr}{\thethrmctr}
+\renewcommand{\thecorctr}{\thethrmctr}
+\renewcommand{\thealphctr}{\Alph{alphctr}}
+
+% Article-scoped hyperref anchors (use \def to work before/after hyperref)
+\def\theHdefnctr{art\thearticlectr.def.\thedefnctr}
+\def\theHexctr  {art\thearticlectr.ex.\theexctr}
+\def\theHremctr {art\thearticlectr.rem.\theremctr}
+\def\theHnotectr{art\thearticlectr.note.\thenotectr}
+\def\theHalphctr{art\thearticlectr.alph.\thealphctr}
+\def\theHlemmactr{art\thearticlectr.lem.\thethrmctr}
+\def\theHpropctr {art\thearticlectr.prop.\thethrmctr}
+\def\theHcorctr  {art\thearticlectr.cor.\thethrmctr}
+
+% ?? Metadata storage ?????????????????????????????????????
+\newcount\smjtotal
+\newcount\smjloopcnt
+\newcount\smjfilteredcnt
+\smjtotal=0
+
+\newcommand{\smj@store}[3]{%
+  \expandafter\gdef\csname smj@data@#1@#2\endcsname{#3}}
+\newcommand{\smj@get}[2]{%
+  \ifcsname smj@data@#1@#2\endcsname
+    \csname smj@data@#1@#2\endcsname
+  \fi}
+
+\newcommand{\smj@joinauthoryearaffil}[3]{%
+  #1%
+  \edef\smj@tmpjoinb{#2}%
+  \ifx\smj@tmpjoinb\empty\else\ ---\ #2\fi
+  \edef\smj@tmpjoinc{#3}%
+  \ifx\smj@tmpjoinc\empty\else\ ---\ #3\fi
+}
+
+\newcommand{\smjauxentry}[3]{%
+  \ifstrequal{#2}{title}{%
+    \ifcsname smj@seen@#1\endcsname\else
+      \global\advance\smjtotal by 1
+      \expandafter\xdef\csname smj@order@\the\smjtotal\endcsname{#1}%
+      \expandafter\gdef\csname smj@seen@#1\endcsname{1}%
+    \fi
+  }{}%
+  \smj@store{#1}{#2}{#3}%
+}
+
+% ?? Key-value schema ?????????????????????????????????????
+\define@key{smj}{title}{\def\smj@tmp@title{#1}}
+\define@key{smj}{author}{\def\smj@tmp@author{#1}}
+\define@key{smj}{year}{\def\smj@tmp@year{#1}}
+\define@key{smj}{affil}{\def\smj@tmp@affil{#1}}
+\define@key{smj}{category}{\def\smj@tmp@category{#1}}
+\define@key{smj}{abstract}{\def\smj@tmp@abstract{#1}}
+\define@key{smj}{cover-title}{\def\smj@tmp@covertitle{#1}}
+\define@key{smj}{toc-title}{\def\smj@tmp@toctitle{#1}}
+\define@key{smj}{no-header}{\def\smj@tmp@noheader{#1}}
+
+\newcommand{\smj@writeentry}[3]{%
+  \protected@write\@auxout{}%
+    {\string\smjauxentry{#1}{#2}{\expandafter\unexpanded\expandafter{#3}}}%
+}
+
+% ?? Hooks (overridden by smjartwork and smjbib) ?????????
+\providecommand{\smjemitarticleheader}[1]{}
+\providecommand{\smjbibstart}[1]{}
+
+% ?? \smjarticle ?????????????????????????????????????????
+\newcommand{\smjarticle}[2]{%
+  \def\smj@tmp@title{}\def\smj@tmp@author{}\def\smj@tmp@year{}%
+  \def\smj@tmp@affil{}\def\smj@tmp@category{article}%
+  \def\smj@tmp@abstract{}\def\smj@tmp@covertitle{}%
+  \def\smj@tmp@toctitle{}%
+  \def\smj@tmp@noheader{}%
+  \setkeys{smj}{#2}%
+  \ifx\smj@tmp@covertitle\empty
+    \let\smj@tmp@covertitle\smj@tmp@title
+  \fi
+  \ifx\smj@tmp@toctitle\empty
+    \let\smj@tmp@toctitle\smj@tmp@title
+  \fi
+  \smj@store{#1}{title}{\smj@tmp@title}%
+  \smj@store{#1}{author}{\smj@tmp@author}%
+  \smj@store{#1}{year}{\smj@tmp@year}%
+  \smj@store{#1}{affil}{\smj@tmp@affil}%
+  \smj@store{#1}{category}{\smj@tmp@category}%
+  \smj@store{#1}{cover-title}{\smj@tmp@covertitle}%
+  \smj@store{#1}{toc-title}{\smj@tmp@toctitle}%
+  \smj@store{#1}{no-header}{\smj@tmp@noheader}%
+  \ifx\smj@tmp@abstract\empty\else
+    \smj@store{#1}{abstract}{\smj@tmp@abstract}\fi
+  \smj@writeentry{#1}{title}{\smj@tmp@title}%
+  \smj@writeentry{#1}{author}{\smj@tmp@author}%
+  \smj@writeentry{#1}{year}{\smj@tmp@year}%
+  \smj@writeentry{#1}{affil}{\smj@tmp@affil}%
+  \smj@writeentry{#1}{category}{\smj@tmp@category}%
+  \smj@writeentry{#1}{cover-title}{\smj@tmp@covertitle}%
+  \smj@writeentry{#1}{toc-title}{\smj@tmp@toctitle}%
+  \smj@writeentry{#1}{no-header}{\smj@tmp@noheader}%
+  \ifx\smj@tmp@abstract\empty\else
+    \smj@writeentry{#1}{abstract}{\smj@tmp@abstract}\fi
+  \smjemitarticleheader{#1}%
+  \smjbibstart{#1}%
+}
+
+% ?? Filtered list builder (shared by cover + ToC) ???????
+\newcommand{\smj@buildfilteredlist}[1]{%
+  \global\smjfilteredcnt=0
+  \global\smjloopcnt=0
+  \loop\ifnum\smjloopcnt<\smjtotal
+    \global\advance\smjloopcnt by 1
+    \expandafter\let\expandafter\smj@cur\csname smj@order@\the\smjloopcnt\endcsname
+    \edef\smj@curcat{\smj@get{\smj@cur}{category}}%
+    \def\smj@include{0}%
+    \ifnum\pdfstrcmp{\smj@curcat}{#1}=0 \def\smj@include{1}\fi
+    \ifnum\pdfstrcmp{#1}{all}=0 \def\smj@include{1}\fi
+    \ifnum\smj@include=1
+      \global\advance\smjfilteredcnt by 1
+      \expandafter\xdef\csname smj@filtered@\the\smjfilteredcnt\endcsname{\smj@cur}%
+    \fi
+  \repeat
+}
+
+\endinput

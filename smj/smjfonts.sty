@@ -1,0 +1,49 @@
+% ============================================================
+%  smj/smjfonts.sty — Fonts & Encoding
+% ============================================================
+%
+%  Loads the font families and input/output encodings used by
+%  the journal. Must run FIRST in the submodule chain — every
+%  other module assumes these fonts are already active.
+%
+%  ── STRUCTURE ──────────────────────────────────────────────
+%
+%      • fontenc[T1]     — 8-bit text glyphs, correct hyphenation
+%      • inputenc[utf8]  — UTF-8 source files
+%      • mathpazo[sc]    — Palatino text + math with small caps
+%      • microtype       — protrusion and expansion polish
+%      • setspace        — hooks for \setstretch (used by smjtypo)
+%      • xspace          — \xspace for acronym macros
+%
+%  ── CUSTOMIZATION ──────────────────────────────────────────
+%
+%      1. To swap the text font, replace mathpazo. Journal-
+%         compatible alternatives that ship with every TeX Live:
+%             newpxtext, newpxmath    (Palatino, modern)
+%             libertine, newtxmath    (Linux Libertine)
+%             newtxtext, newtxmath    (Times-based)
+%         Follow the swap with a rebuild to catch missing
+%         glyph warnings.
+%
+%      2. To disable microtype polish (rarely a good idea),
+%         comment out its \RequirePackage line.
+%
+%      3. Do NOT remove fontenc or inputenc. Both are required
+%         for correct handling of accented characters and the
+%         en/em dashes used throughout the journal.
+%
+%      4. Do NOT change the load order. mathpazo requires
+%         fontenc[T1] to already be active.
+%
+% ============================================================
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{smjfonts}[2026/03/15 SMJ Fonts v1.0]
+
+\RequirePackage[T1]{fontenc}
+\RequirePackage[utf8]{inputenc}
+\RequirePackage[sc]{mathpazo}
+\RequirePackage{microtype}
+\RequirePackage{setspace}
+\RequirePackage{xspace}
+
+\endinput
